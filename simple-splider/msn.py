@@ -64,7 +64,7 @@ def insertScrapy(url, id, count=0):
         if title is not None:
             title = title.getText()
             if title.strip()=='':
-                pass 
+                print("Title is Empty:Skip") 
             else:
                 created = int(time())
                 date = datetime.datetime.now()
