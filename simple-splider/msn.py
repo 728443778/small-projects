@@ -8,9 +8,27 @@ from time import time
 from time import sleep
 import datetime
 from urllib.parse import urlparse
+import logging
 
 conn = None
 cur = None
+log = None
+
+def getLog():
+    global log
+    if log is None:
+        return openLog()
+    return log
+
+def openLog():
+    global log
+    log = open('log.log', encoding='UTF-8', mode='a')
+    return log
+
+def writeLog(message):
+    logger = getLog()
+    logger.write(message)
+    logger.flush()
 
 def getDb():
     global cur
@@ -60,6 +78,7 @@ def insertScrapy(url, id, count=0):
     try:
         webFd = urlopen(url)
         bsObj = BeautifulSoup(webFd.read())
+        webFd.close()
         title = bsObj.title
         if title is not None:
             title = title.getText()
@@ -74,10 +93,14 @@ def insertScrapy(url, id, count=0):
                     cur.execute('INSERT INTO scraping (url, title, websiteId,created, strcreated) VALUES (%s,%s,%s,%s, %s)', (url, title, int(id), int(created), date))
                     conn.commit()
                     print('INSERT %s'%(title))
+                    title = None
                 except Exception as e:
                     print('Exception : %s' %(e))
+                    title = None
                     sleep(5)
                     #return 
+        else :
+            print("%s Title is None"%(url))
         aTags = bsObj.findAll('a', {'href':re.compile('^.*[^\s]+.*$')})
         #aTags = bsObj.findAll('a')
         for aTag in aTags:
@@ -98,8 +121,9 @@ def insertScrapy(url, id, count=0):
                 href = currentUrl+href
             cur.execute('SELECT id FROM scraping WHERE url=%s',(href))
             if cur.rowcount == 0:
-                count +=1
-                insertScrapy(href, id, count)
+                times = count
+                times = times+1
+                insertScrapy(href, id, times)
             else:
                 print('%s is exist'%(href))
     except Exception as e:
@@ -109,13 +133,26 @@ def insertScrapy(url, id, count=0):
 def main():
     websites = getWebsites()
     for website in websites:
+        date = datetime.datetime.now()
+        date = date.strftime('%Y-%m-%d %H:%m:%S')
         url = website[1]
         id = website[0]
+        writeLog(date+':scrapy root:' + url+"\n")
         insertScrapy(url, id)
         sleep(2)
 
 if __name__ == '__main__':
-    while  1:
-        main()
-        print('scrapy down:sleep a day')
-        sleep(3600*24)
+    try:
+        while  1:
+            main()
+            print('scrapy down:sleep a day')
+            sleep(3600*24)
+    except (Exception,KeyboardInterrupt) as e:
+        print("Exception:%s"%(e))
+        raise e
+    finally:
+        if log is not None:
+            log.close()
+        if conn is not None:
+            conn.close()
+    
