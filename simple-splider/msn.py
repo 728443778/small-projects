@@ -1,6 +1,5 @@
 #-*-coding:utf-8 -*-
 
-from urllib.request import urlopen
 from bs4 import BeautifulSoup
 import pymysql
 import re
@@ -8,7 +7,7 @@ from time import time
 from time import sleep
 import datetime
 from urllib.parse import urlparse
-import logging
+import requests
 
 conn = None
 cur = None
@@ -76,9 +75,19 @@ def insertScrapy(url, id, count=0):
     baseUrl = parse.scheme +'://' + parse.netloc
     currentUrl = parse.scheme +'://'+ parse.netloc + parse.path
     try:
-        webFd = urlopen(url)
-        bsObj = BeautifulSoup(webFd.read())
-        webFd.close()
+        headers = {
+            "User-Agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/601.6.17 (KHTML, like Gecko) Version/9.1.1 Safari/601.6.17",
+            "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language":"zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3",
+            "Accept-Encoding":"gzip, deflate",
+            "Cache-Control":"max-age=0",
+            "Connection":"keep-alive"
+        }
+        response = requests.Session().get(url, headers=headers)
+        if response.status_code != 200:
+            return 
+        bsObj = BeautifulSoup(response.text)
+        response.close()
         title = bsObj.title
         if title is not None:
             title = title.getText()
