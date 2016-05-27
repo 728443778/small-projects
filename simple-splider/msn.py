@@ -91,6 +91,7 @@ def insertScrapy(url, id, count=0):
         title = bsObj.title
         if title is not None:
             title = title.getText()
+            cur = getDb()
             if title.strip()=='':
                 print("Title is Empty:Skip") 
             else:
@@ -98,7 +99,6 @@ def insertScrapy(url, id, count=0):
                 date = datetime.datetime.now()
                 date = date.strftime('%Y-%m-%d %H:%m')
                 try:
-                    cur = getDb()
                     cur.execute('INSERT INTO scraping (url, title, websiteId,created, strcreated) VALUES (%s,%s,%s,%s, %s)', (url, title, int(id), int(created), date))
                     conn.commit()
                     print('INSERT %s'%(title))
